@@ -61,6 +61,14 @@ h1,p,a{
     font-weight: 700;
 }
 
+.alert {
+    color: red;
+    background-color: whitesmoke;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    text-align: center;
+}
+
 ::placeholder{
     color: white;  
 
