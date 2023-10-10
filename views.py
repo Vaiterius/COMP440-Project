@@ -34,7 +34,7 @@ def registration():
         confirm_password = request.form.get("confirmPassword").strip()
 
         # Ensure username and email aren't already taken.
-        cursor.execute(f"SELECT username FROM users WHERE username = '{username}'")
+        cursor.execute(f"SELECT username FROM users WHERE username = %s", (username, ))
         if cursor.fetchall():
             flash("Username already taken!", "error")
             return render_template("signup.html"), 400
