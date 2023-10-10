@@ -1,0 +1,78 @@
+*{
+    margin: 0;
+    padding: 0;
+}
+
+body{
+    background-image: url('stretched-2256-1504-1328545.png');
+    background-size: cover;
+
+}
+
+input{
+    display: inline-block;
+}
+
+.main{
+    height: 100vh;
+    display: flex;
+}
+
+.child{
+    margin: auto;
+    height: 440px;
+    width: 400px;
+    border-radius: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.50);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(15px);
+}
+
+.email,.password{
+    width: 300px;
+    height: 30px;
+    border: none;
+    border-bottom: 2px solid black;
+    margin: 20px;
+    display: block;
+    outline: none;
+    color: white;
+    background: transparent;
+}
+
+.btn{
+    height: 35px;
+    width: 300px;
+    border-radius: 6px;
+    border: none;
+    background: #0091ff;
+    margin: 15px;
+    margin-bottom: 20px;
+    font-weight: 700;
+}
+
+.checkbox{
+    position: relative;
+    left: -45px;
+}
+
+.forgotpass{
+    position: relative;
+    right: -110px;
+    top: -19px;
+    text-decoration: none;
+    color: black;
+}
+
+.register{
+    text-decoration: none;
+    color: black;
+    font-weight: 700;
+}
+
+::placeholder{
+    color: white;
+}

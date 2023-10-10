@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+
+{% block title %}Register{% endblock %}
+
+{% block main %}
+  <link rel="stylesheet" href="static/styles/signup_styles.css" />
+
+  <section class="my-4">
+      <form action="/registration" method="post">
+          <div class="main">
+              <div class="child">
+                <h1>Registration</h1>
+                <input type="text" placeholder="Username" class="username" name="username"/>
+                <input type="text" placeholder="First Name" class="firstName" name="firstName" />
+                <input type="text" placeholder="Last Name" class="lastName" name="lastName"/>
+                <input type="email" placeholder="Email" class="email" name="email"/>
+                <input type="password" placeholder="Password" class="password" name="password"/>
+                <input type="password" placeholder="Confirm Password" class="password" name="confirmPassword"/>
+                <button class="btn"><b>Register</b></button>
+                <p class="text">Already have an account?<a href="login.html" class="log"><b>Login</b></a></p>
+              </div>
+            </div>
+      </form>
+  </section>
+{% endblock %}
