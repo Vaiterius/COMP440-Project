@@ -71,8 +71,32 @@ def login():
     """User login to account"""
 
     if request.method == "POST":
+        title = request.form.get("title").strip()
+        description = request.form.get("description").strip()
+        category = request.form.get("category").strip()
+        price = float(request.form.get("price"))
+        user_id = 1  # Replace with the actual user's ID
+        
+        # Check if the user has posted 3 items today
+        today = datetime.today().date()
+        cursor.execute("SELECT items_posted FROM users WHERE username = %s", (username,))
+        items_posted = cursor.fetchone()[0]
+        
+        if items_posted >=3:
+            flash("You've already posted 3 times today. You can't post more.", "error")
+        else:
+            # Insert the new item into the database
+            cursor.execute("INSERT INTO products (title, description, category, price, username) VALUES (%s, %s, %s, %s, %s)",(title, description, category, price,username))
+            connection.commit()
+            items_posted += 1
+            
+            #Update the items_posted count in the users table
+            cursor.execute("UPDATE users SET items_posted = %s WHERE username = %s", (items_posted, username))
+            connection.commit()
+            
+            flash("Item posted sucessfully.", "success")
 
-        ...  # TODO
+    return render_template("post_item.html")
 
-    return render_template("login.html")
-
+    if __name__ == "__main__":
+    app.run(debug=True)
