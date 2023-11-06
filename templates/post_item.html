@@ -1,13 +1,13 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Post Item</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename ='post_item_styles.css') }}">
-</head>
-<body>
-    <div class="container">
+{% extends "layout.html" %}
+
+{% block title %}Home | Post an item{% endblock %}
+
+{% block main %}
+    <link rel="stylesheet" href="static/styles/post_item_styles.css" />
+
+    <section class="container">
         <h1>Post an Item</h1>
-        <form method="POST" action="/post_item">
+        <form method="POST" action="/submit_listing">
             <div class="form-group">
                 <label for="title">Title:</label>
                 <input type="text" name="title" id="title" required>
@@ -26,6 +26,5 @@
             </div>
             <button type="submit" class="btn">Post Item</button>
         </form>
-    </div>
-</body>
-</html>
+    </section>
+{% endblock %}

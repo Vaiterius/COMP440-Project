@@ -1,30 +1,32 @@
 {% extends "layout.html" %}
 
-{% block title %}Home | Post an item{% endblock %}
+{% block title %}Home | Item listings{% endblock %}
 
 {% block main %}
-    <link rel="stylesheet" href="static/styles/post_item_styles.css" />
+    <link rel="stylesheet" href="static/styles/index_styles.css" />
 
     <section class="container">
-        <h1>Post an Item</h1>
-        <form method="POST" action="/submit_listing">
-            <div class="form-group">
-                <label for="title">Title:</label>
-                <input type="text" name="title" id="title" required>
-            </div>
-            <div class="form-group">
-                <label for="description">Description:</label>
-                <textarea name="description" id="description" required></textarea>
-            </div>
-            <div class="form-group">
-                <label for="category">Category:</label>
-                <input type="text" name="category" id="category" required>
-            </div>
-            <div class="form-group">
-                <label for="price">Price:</label>
-                <input type="number" name="price" id="price" required>
-            </div>
-            <button type="submit" class="btn">Post Item</button>
-        </form>
+        <h1>Hello, {{ username }}!</h1>
+
+        <div class="button">
+            <form action="/initialize" method="post">
+                <button type="submit">Initialize database</button>
+            </form>
+        </div>
+
+        <p>Click <a href="/templates/post_item.html">here</a> to post an item!</p>
+
+
+        <h2>Listings</h2>
+        <div class="listing">
+            {% for listing in listings %}
+                <h3>{{ listing.title }}</h3>
+                <p>Description: {{ listing.description }}</p>
+                <p>Price: {{ listing.price }}</p>
+                <p>ID: {{ listing.item_id }}</p>
+                <p>Uploaded: {{ listing.created_at }}</p>
+            {% endfor %}
+        </div>
+        
     </section>
 {% endblock %}
