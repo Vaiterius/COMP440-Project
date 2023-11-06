@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+
+{% block title %}Home | Post an item{% endblock %}
+
+{% block main %}
+    <link rel="stylesheet" href="static/styles/post_item_styles.css" />
+
+    <section class="container">
+        <h1>Post an Item</h1>
+        <form method="POST" action="/submit_listing">
+            <div class="form-group">
+                <label for="title">Title:</label>
+                <input type="text" name="title" id="title" required>
+            </div>
+            <div class="form-group">
+                <label for="description">Description:</label>
+                <textarea name="description" id="description" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="category">Category:</label>
+                <input type="text" name="category" id="category" required>
+            </div>
+            <div class="form-group">
+                <label for="price">Price:</label>
+                <input type="number" name="price" id="price" required>
+            </div>
+            <button type="submit" class="btn">Post Item</button>
+        </form>
+    </section>
+{% endblock %}
