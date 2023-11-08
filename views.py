@@ -1,7 +1,7 @@
 import random
 import datetime
 
-from flask import Flask, request, render_template, redirect, flash, session
+from flask import Flask, request, render_template, redirect, flash, session, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 from mysql.connector import connection
 
@@ -19,35 +19,7 @@ connection = connection.MySQLConnection(
 cursor = connection.cursor(dictionary=True)
 
 
-def insert_item(author_id: int, title: str, description: str, price: float, category_id: int) -> None:
-    """General function that helps with inserting an item along with its belonging category"""
-    # Insert item.
-    cursor.execute("INSERT IGNORE INTO items (author_id, title, description, price) VALUES (%s, %s, %s, %s)", (author_id, title, description, price))
-
-    # Fetch item's ID after being generated from insertion.
-    cursor.execute("SELECT LAST_INSERT_ID()")
-    item_id = cursor.fetchone()["LAST_INSERT_ID()"]
-    print(item_id)
-
-    # Create an item-category connection, binding an item to a category.
-    cursor.execute("INSERT IGNORE INTO item_categories (item_id, category_id) VALUES (%s, %s)", (item_id, category_id))
-
-
-def has_reached_max_posts(author_id: int, table_name: str) -> bool:
-    """General function that helps with checking if user has posted 3 times the past day.
-    
-    Either for items or reviews on an item.
-    """
-    MAX: int = 3
-
-    # Queries if post date has been posted within the last day.
-    yesterday_today = datetime.datetime.now() - datetime.timedelta(days=1)
-    cursor.execute(
-        f"SELECT COUNT(*) FROM {table_name} WHERE author_id = %s AND created_at >= %s",
-        (author_id, yesterday_today)
-    )
-
-    return cursor.fetchone()["COUNT(*)"] >= MAX  # Count is more than 3.
+### VIEWS ###
 
 
 @app.route("/")
@@ -57,8 +29,27 @@ def home():
     if not "username" in session:
         return redirect("/login")
     
-    # Query for the listings.
-    cursor.execute("SELECT * FROM items")
+    # Query for the listings, getting the author and the category.
+    query = """
+        SELECT 
+            users.username AS author,
+            items.item_id,
+            items.title,
+            items.description,
+            items.price,
+            items.created_at,
+            categories.category_name AS category
+        FROM items
+        INNER JOIN item_categories
+        INNER JOIN categories
+        INNER JOIN users
+        ON
+            items.item_id = item_categories.item_id AND
+            item_categories.category_id = categories.category_id AND
+            users.user_id = items.author_id
+        ORDER BY created_at DESC;
+    """
+    cursor.execute(query)
     listings = cursor.fetchall()
 
     return render_template("index.html", username=session["username"], listings=listings)
@@ -169,7 +160,7 @@ def login():
     return render_template("login.html")
 
 
-@app.route("/submit_listing", methods=["GET", "POST"])
+@app.route("/submit_listing/", methods=["GET", "POST"])
 def submit_listing():
     """Submit an item as a listing"""
     # Check if user is logged in.
@@ -181,9 +172,17 @@ def submit_listing():
         user_id: int = session["user_id"]
 
         # Check if the user has already posted 3 items today.
-        if has_reached_max_posts(user_id, "items"):
-            flash("You have reached the maximum posts for today", "error")
-            return redirect("/"), 400
+        query = """
+            SELECT items.created_at
+            FROM items
+            WHERE items.author_id = %s
+            ORDER BY created_at DESC
+            LIMIT 3;
+        """
+        cursor.execute(query, (user_id,))
+        if has_reached_max_posts(cursor.fetchall()):
+            flash("You have reached the limit for posting items for today", "error")
+            return redirect("/")
 
         # Fetch item inputs.
         title = request.form.get("title").strip()
@@ -212,7 +211,7 @@ def submit_listing():
     return render_template("post_item.html", categories=categories)
 
 
-@app.route("/submit_review/item_id=<item_id>", methods=["POST"])
+@app.route("/submit_review/item_id=<item_id>/", methods=["POST"])
 def submit_review(item_id: int):
     """Submit review for an item"""
     # Check if user is logged in.
@@ -227,9 +226,18 @@ def submit_review(item_id: int):
     review = request.form.get("review").strip()
 
     # Check if the user has already posted 3 items today.
-    if has_reached_max_posts(user_id, "items"):
+    query = """
+        SELECT reviews.created_at
+        FROM reviews INNER JOIN items
+        ON reviews.item_id = items.item_id
+        WHERE reviews.author_id = %s
+        ORDER BY created_at DESC
+        LIMIT 3;
+    """
+    cursor.execute(query, (user_id,))
+    if has_reached_max_posts(cursor.fetchall()):
         flash("You have reached the maximum posts for today", "error")
-        return redirect("/"), 400
+        return redirect("/")
     
     # Create and save review into database.
     cursor.execute(
@@ -249,7 +257,28 @@ def submit_review(item_id: int):
 def view_listing(listing_id: int):
     """View an individual listing"""
 
-    cursor.execute("SELECT * FROM items WHERE item_id = %s", (listing_id,))
+    # Query for the listings, getting the author and the category.
+    query = """
+        SELECT 
+            users.username AS author,
+            items.item_id,
+            items.title,
+            items.description,
+            items.price,
+            items.created_at,
+            categories.category_name AS category
+        FROM items
+        INNER JOIN item_categories
+        INNER JOIN categories
+        INNER JOIN users
+        ON
+            items.item_id = item_categories.item_id AND
+            item_categories.category_id = categories.category_id AND
+            users.user_id = items.author_id
+        WHERE items.item_id = %s
+        ORDER BY created_at DESC;
+    """
+    cursor.execute(query, (listing_id,))
     listing = cursor.fetchone()
 
     if not listing:
@@ -257,10 +286,50 @@ def view_listing(listing_id: int):
         return redirect("/")
     
     # Insert reviews to be seen under the item.
-    cursor.execute("SELECT * FROM reviews WHERE item_id = %s", (listing_id,))
+    query = """
+        SELECT users.username, reviews.rating, reviews.description, reviews.created_at
+        FROM users INNER JOIN items INNER JOIN reviews
+        ON users.user_id = reviews.author_id AND items.item_id = reviews.item_id
+        WHERE reviews.item_id = %s
+        ORDER BY created_at DESC;
+    """
+
+    cursor.execute(query, (listing_id,))
     reviews = cursor.fetchall()
 
     return render_template("listing.html", listing=listing, reviews=reviews, ratings=["excellent", "good", "fair", "poor"])
+
+
+### UTILITIES ###
+
+
+def insert_item(author_id: int, title: str, description: str, price: float, category_id: int) -> None:
+    """General function that helps with inserting an item along with its belonging category"""
+    # Insert item.
+    cursor.execute("INSERT IGNORE INTO items (author_id, title, description, price) VALUES (%s, %s, %s, %s)", (author_id, title, description, price))
+
+    # Fetch item's ID after being generated from insertion.
+    cursor.execute("SELECT LAST_INSERT_ID()")
+    item_id = cursor.fetchone()["LAST_INSERT_ID()"]
+    print(item_id)
+
+    # Create an item-category connection, binding an item to a category.
+    cursor.execute("INSERT IGNORE INTO item_categories (item_id, category_id) VALUES (%s, %s)", (item_id, category_id))
+
+
+def has_reached_max_posts(query: list[dict]) -> bool:
+    """General function that helps with checking if user has posted 3 times the past day.
+    
+    Either for items or reviews on an item.
+    """
+    num_posted_today: int = 0
+    for row in query:
+        date = row["created_at"]
+        # Check if earlier.
+        if date < datetime.datetime.now():
+            num_posted_today += 1
+    
+    return num_posted_today >= 3
 
 
 @app.route("/initialize", methods=["POST"])

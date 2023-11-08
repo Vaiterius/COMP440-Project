@@ -21,15 +21,16 @@
         
             {% for listing in listings %}
                 <!-- Make each listing element clickable -->
-                <a href="/listing/id={{ listing.item_id }}">
-                    <div class="listing">
+                <div class="listing">
+                    <a href="/listing/id={{ listing.item_id }}">
                         <h3>{{ listing.title }}</h3>
+                        <p>Posted by {{ listing.author }}</p>
                         <p>Description: {{ listing.description }}</p>
                         <p>Price: {{ listing.price }}</p>
-                        <p>ID: {{ listing.item_id }}</p>
+                        <p>Category: {{ listing.category }}</p>
                         <p>Uploaded: {{ listing.created_at }}</p>
-                    </div>
-                </a>
+                    </a>
+                </div>
             {% endfor %}
         
     </section>

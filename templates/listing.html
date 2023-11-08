@@ -3,13 +3,14 @@
 {% block title %}Listing #{{ listing.item_id }}{% endblock %}
 
 {% block main %}
-    <link rel="stylesheet" href="static/styles/index_styles.css" />
+    <link rel="stylesheet" href="static/styles/listing_styles.css" />
 
     <section class="container">
         <h1>{{ listing.title }}</h1>
+        <p>Posted by {{ listing.author }}</p>
         <p>Description: {{ listing.description }}</p>
         <p>Price: {{ listing.price }}</p>
-        <p>ID: {{ listing.item_id }}</p>
+        <p>Category: {{ listing.category }}</p>
         <p>Uploaded: {{ listing.created_at }}</p>
     </section>
 
@@ -18,11 +19,13 @@
         <h2>Reviews</h2>
 
         {% for review in reviews %}
-            <div>
+            <div class="review">
+                <h4>{{ review.username }} says...</h4>
                 <p>Rating: {{ review.rating }}</p>
                 <p>Description: {{ review.description }}</p>
                 <p>Created at: {{ review.created_at }}</p>
             </div>
+            <hr>
         {% endfor %}
 
         <h3>Satisfied with your purchase? Leave a review!</h3>

@@ -1,0 +1,8 @@
+.listing a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.listing:hover {
+    background-color: gainsboro;
+}
