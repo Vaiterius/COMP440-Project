@@ -1,5 +1,5 @@
 import random
-from datetime import datetime
+import datetime
 
 from flask import Flask, request, render_template, redirect, flash, session
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -17,6 +17,37 @@ connection = connection.MySQLConnection(
 # e.g. {"username": "foo", "email": "bar", ...}
 # instead of ("foo", "bar", ...)
 cursor = connection.cursor(dictionary=True)
+
+
+def insert_item(author_id: int, title: str, description: str, price: float, category_id: int) -> None:
+    """General function that helps with inserting an item along with its belonging category"""
+    # Insert item.
+    cursor.execute("INSERT IGNORE INTO items (author_id, title, description, price) VALUES (%s, %s, %s, %s)", (author_id, title, description, price))
+
+    # Fetch item's ID after being generated from insertion.
+    cursor.execute("SELECT LAST_INSERT_ID()")
+    item_id = cursor.fetchone()["LAST_INSERT_ID()"]
+    print(item_id)
+
+    # Create an item-category connection, binding an item to a category.
+    cursor.execute("INSERT IGNORE INTO item_categories (item_id, category_id) VALUES (%s, %s)", (item_id, category_id))
+
+
+def has_reached_max_posts(author_id: int, table_name: str) -> bool:
+    """General function that helps with checking if user has posted 3 times the past day.
+    
+    Either for items or reviews on an item.
+    """
+    MAX: int = 3
+
+    # Queries if post date has been posted within the last day.
+    yesterday_today = datetime.datetime.now() - datetime.timedelta(days=1)
+    cursor.execute(
+        f"SELECT COUNT(*) FROM {table_name} WHERE author_id = %s AND created_at >= %s",
+        (author_id, yesterday_today)
+    )
+
+    return cursor.fetchone()["COUNT(*)"] >= MAX  # Count is more than 3.
 
 
 @app.route("/")
@@ -138,47 +169,103 @@ def login():
     return render_template("login.html")
 
 
-# @app.route("/submit_listing", methods=["GET", "POST"])
-# def submit_listing():
-#     """Submit an item as a listing"""
-#     # Check if user is logged in.
-#     if not "username" in session:
-#         return redirect("/login")
+@app.route("/submit_listing", methods=["GET", "POST"])
+def submit_listing():
+    """Submit an item as a listing"""
+    # Check if user is logged in.
+    if not "username" in session:
+        return redirect("/login")
     
-#     if request.method == "POST":
-#         username: str = session["username"]
+    if request.method == "POST":
+        username: str = session["username"]
+        user_id: int = session["user_id"]
 
-#         # TODO Check if the user has already posted 3 items today.
-#         # today = datetime.today().date()
-#         # cursor.execute("SELECT items_posted FROM users WHERE username = %s", (username,))
-#         # items_posted = cursor.fetchone()[0]
-#         items_posted: int = 2
-#         if items_posted >= 3:
-#             flash("You've already posted 3 times today. You can't post more.", "error")
+        # Check if the user has already posted 3 items today.
+        if has_reached_max_posts(user_id, "items"):
+            flash("You have reached the maximum posts for today", "error")
+            return redirect("/"), 400
 
-#         # TODO Fetch item inputs.
-#         title = request.form.get("title").strip()
-#         description = request.form.get("description").strip()
-#         category = request.form.get("category").strip()
-#         price = float(request.form.get("price"))
-#         user_id = 1  # Replace with the actual user's ID
+        # Fetch item inputs.
+        title = request.form.get("title").strip()
+        description = request.form.get("description").strip()
+        category = request.form.get("category").strip()
+        price = float(request.form.get("price"))
 
-#         # TODO Save the listing into the database.
-#         cursor.execute("INSERT INTO products (title, description, category, price, username) VALUES (%s, %s, %s, %s, %s)",(title, description, category, price,username))
-#         connection.commit()
+        # Get ID from selected category.
+        cursor.execute("SELECT category_id FROM categories WHERE category_name = %s", (category,))
+        category_id: int = cursor.fetchone()["category_id"]
+
+        # Save item listing.
+        insert_item(user_id, title, description, price, category_id)
+
+        # Commit changes.
+        connection.commit()
         
-#         flash("Item posted sucessfully.", "success")
+        flash("Item posted sucessfully.", "success")
 
-#         # Redirect to same page, essentially "refreshing" it.
-#         return redirect("/")
+        redirect("/")
     
-#     return redirect("/")
+    # Insert the pre-defined categories as a list of options.
+    cursor.execute("SELECT category_name FROM categories")
+    categories: list[str] = [row["category_name"] for row in cursor.fetchall()]
+    
+    return render_template("post_item.html", categories=categories)
+
+
+@app.route("/submit_review/item_id=<item_id>", methods=["POST"])
+def submit_review(item_id: int):
+    """Submit review for an item"""
+    # Check if user is logged in.
+    if not "username" in session:
+        flash("You must be logged in to perform this", "error")
+        return redirect("/login")
+    
+    user_id: int = session["user_id"]
+    
+    # Get and cleanse form data.
+    rating = request.form.get("rating").strip()
+    review = request.form.get("review").strip()
+
+    # Check if the user has already posted 3 items today.
+    if has_reached_max_posts(user_id, "items"):
+        flash("You have reached the maximum posts for today", "error")
+        return redirect("/"), 400
+    
+    # Create and save review into database.
+    cursor.execute(
+        "INSERT INTO reviews (author_id, item_id, rating, description) VALUES (%s, %s, %s, %s)",
+        (user_id, item_id, rating, review)
+    )
+
+    # Commit the changes.
+    connection.commit()
+    
+    # Return to individual item listing, where they will see the reviews under it.
+    return redirect(f"/listing/id={item_id}")
+
+
+
+@app.route("/listing/id=<listing_id>")
+def view_listing(listing_id: int):
+    """View an individual listing"""
+
+    cursor.execute("SELECT * FROM items WHERE item_id = %s", (listing_id,))
+    listing = cursor.fetchone()
+
+    if not listing:
+        flash("Item does not exist", "error")
+        return redirect("/")
+    
+    # Insert reviews to be seen under the item.
+    cursor.execute("SELECT * FROM reviews WHERE item_id = %s", (listing_id,))
+    reviews = cursor.fetchall()
+
+    return render_template("listing.html", listing=listing, reviews=reviews, ratings=["excellent", "good", "fair", "poor"])
 
 
 @app.route("/initialize", methods=["POST"])
 def initialize():
     """Initialize the database tables if not already exists, as per the instructions"""
-    # Make sure a user is logged in before they can execute this.
     # Check if user is logged in.
     if not "username" in session:
         flash("You must be logged in to perform this", "error")
@@ -233,6 +320,10 @@ def initialize():
             FOREIGN KEY (item_id) REFERENCES items(item_id)
         );
 
+        -- Make admin
+        INSERT IGNORE INTO users (user_id, username, password, first_name, last_name, email)
+        VALUES (1, 'admin', 'admin', 'Max', 'Caulfield', 'admin@gmail.com');
+
         -- Pre-defined categories
         INSERT IGNORE INTO categories (category_name) 
         VALUES 
@@ -259,42 +350,32 @@ def initialize():
 
     # Dummy item details
     dummy_items = [
-        ("Laptop", "Brand new laptop, great for gaming", 999.99),
-        ("Coffee Maker", "High-quality coffee machine for home use", 49.99),
-        ("Yoga Mat", "Premium yoga mat, eco-friendly material", 29.99),
-        ("Bluetooth Speaker", "Portable speaker with excellent sound quality", 79.99),
-        ("Gardening Tools", "Set of essential tools for gardening enthusiasts", 39.99),
+        {'title': 'Shoes', 'description': 'Running shoes for everyday workout', 'price': 49.99},
+        {'title': 'Book', 'description': 'A thrilling novel about adventure', 'price': 14.99},
+        {'title': 'Headphones', 'description': 'Noise-cancelling headphones', 'price': 99.99}
     ]
 
     # Get all available category IDs from the categories table
     cursor.execute("SELECT category_id FROM categories")
     categories = cursor.fetchall()
-    category_ids = [category["category_id"] for category in categories]
-
-    # Get current session user id to upload as author.
-    user_id: int = session["user_id"]
+    category_ids: list[int] = [category["category_id"] for category in categories]
 
     for item in dummy_items:
-        # Insert item details into the items table
-        cursor.execute("INSERT IGNORE INTO items (author_id, title, description, price) VALUES (%s, %s, %s, %s)", (user_id, item['title'], item['description'], item['price']))
-
-        # Get the last inserted item_id
-        cursor.execute("SELECT LAST_INSERT_ID()")
-        item_id = cursor.fetchone()["item_id"]
-
-        # Assign a random category to the item
+        # Insert item with an assigned category.
         random_category_id = random.choice(category_ids)
-        cursor.execute("INSERT IGNORE INTO item_categories (item_id, category_id) VALUES (%s, %s)", (item_id, random_category_id))
+        insert_item(1, item["title"], item["description"], item["price"], random_category_id)
 
     # Commit the changes
     connection.commit()
 
-    if cursor.rowcount > 0:
-        flash("Database successfully initialized!", "success")
-    else:
-        flash("No initialization needed", "info")
+    flash("Database successfully initialized!", "success")
 
     return redirect("/")
+
+
+@app.route("/lmao")
+def lma0():
+    return render_template("lmao.html")
 
 
 if __name__ == "__main__":

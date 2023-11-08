@@ -20,7 +20,7 @@
         <div class="row">
             <div class="col"></div>
             <div class="col align-self-center mt-3">
-                {% with messages =  get_flashed_messages(with_categories=true) %}
+                {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
                         {% for category, message in messages %}
                             {% if category == "success" %}
@@ -50,6 +50,13 @@
             </div>
             <div class="col"></div>
         </div>
+    </div>
+
+    <!-- Log out -->
+    <div class="button">
+        <form action="/login" method="get">
+            <button type="submit">Log out</button>
+        </form>
     </div>
 
     <!-- Main content of page goes here -->

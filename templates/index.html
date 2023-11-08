@@ -14,19 +14,23 @@
             </form>
         </div>
 
-        <p>Click <a href="/templates/post_item.html">here</a> to post an item!</p>
+        <p>Click <a href="/submit_listing">here</a> to post an item!</p>
 
 
         <h2>Listings</h2>
-        <div class="listing">
+        
             {% for listing in listings %}
-                <h3>{{ listing.title }}</h3>
-                <p>Description: {{ listing.description }}</p>
-                <p>Price: {{ listing.price }}</p>
-                <p>ID: {{ listing.item_id }}</p>
-                <p>Uploaded: {{ listing.created_at }}</p>
+                <!-- Make each listing element clickable -->
+                <a href="/listing/id={{ listing.item_id }}">
+                    <div class="listing">
+                        <h3>{{ listing.title }}</h3>
+                        <p>Description: {{ listing.description }}</p>
+                        <p>Price: {{ listing.price }}</p>
+                        <p>ID: {{ listing.item_id }}</p>
+                        <p>Uploaded: {{ listing.created_at }}</p>
+                    </div>
+                </a>
             {% endfor %}
-        </div>
         
     </section>
 {% endblock %}
