@@ -29,30 +29,68 @@ def home():
     if not "username" in session:
         return redirect("/login")
     
-    # Query for the listings, getting the author and the category.
-    query = """
-        SELECT 
-            users.username AS author,
-            items.item_id,
-            items.title,
-            items.description,
-            items.price,
-            items.created_at,
-            categories.category_name AS category
-        FROM items
-        INNER JOIN item_categories
-        INNER JOIN categories
-        INNER JOIN users
-        ON
-            items.item_id = item_categories.item_id AND
-            item_categories.category_id = categories.category_id AND
-            users.user_id = items.author_id
-        ORDER BY created_at DESC;
-    """
-    cursor.execute(query)
+    # Insert the pre-defined categories as a list of options.
+    cursor.execute("SELECT category_name FROM categories")
+    categories: list[str] = [row["category_name"] for row in cursor.fetchall()]
+    
+    # Get user-selected category, if selected. Default is all.
+    search_category: str = None
+    query = None
+    if request.args.get("category") in categories:
+        search_category = request.args.get("category")
+    
+        # Query for the listings with a specific category.
+        query = """
+            SELECT 
+                users.username AS author,
+                items.item_id,
+                items.title,
+                items.description,
+                items.price,
+                items.created_at,
+                categories.category_name AS category
+            FROM items
+            INNER JOIN item_categories
+            INNER JOIN categories
+            INNER JOIN users
+            ON
+                items.item_id = item_categories.item_id AND
+                item_categories.category_id = categories.category_id AND
+                users.user_id = items.author_id
+            WHERE categories.category_name = %s
+            ORDER BY created_at DESC;
+        """
+        cursor.execute(query, (search_category,))
+    else:
+        # Query for all listings, no specific category.
+        query = """
+            SELECT 
+                users.username AS author,
+                items.item_id,
+                items.title,
+                items.description,
+                items.price,
+                items.created_at,
+                categories.category_name AS category
+            FROM items
+            INNER JOIN item_categories
+            INNER JOIN categories
+            INNER JOIN users
+            ON
+                items.item_id = item_categories.item_id AND
+                item_categories.category_id = categories.category_id AND
+                users.user_id = items.author_id
+            ORDER BY created_at DESC;
+        """
+        cursor.execute(query)
+
     listings = cursor.fetchall()
 
-    return render_template("index.html", username=session["username"], listings=listings)
+    return render_template("index.html",
+                           username=session["username"],
+                           search_category=search_category,
+                           categories=categories,
+                           listings=listings)
 
 
 @app.route("/registration", methods=["GET", "POST"])
@@ -202,13 +240,13 @@ def submit_listing():
         
         flash("Item posted sucessfully.", "success")
 
-        redirect("/")
+        return redirect("/")
     
     # Insert the pre-defined categories as a list of options.
     cursor.execute("SELECT category_name FROM categories")
     categories: list[str] = [row["category_name"] for row in cursor.fetchall()]
     
-    return render_template("post_item.html", categories=categories)
+    return render_template("post_listing.html", categories=categories)
 
 
 @app.route("/submit_review/item_id=<item_id>/", methods=["POST"])
@@ -311,7 +349,6 @@ def insert_item(author_id: int, title: str, description: str, price: float, cate
     # Fetch item's ID after being generated from insertion.
     cursor.execute("SELECT LAST_INSERT_ID()")
     item_id = cursor.fetchone()["LAST_INSERT_ID()"]
-    print(item_id)
 
     # Create an item-category connection, binding an item to a category.
     cursor.execute("INSERT IGNORE INTO item_categories (item_id, category_id) VALUES (%s, %s)", (item_id, category_id))

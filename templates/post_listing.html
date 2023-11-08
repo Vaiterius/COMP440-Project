@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+
+{% block title %}Home | Post an item{% endblock %}
+
+{% block main %}
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/post_listing_styles.css') }}" />
+
+    <section class="container">
+        <div>
+            <h1>Post an Item</h1>
+            <form method="POST" action="/submit_listing">
+                <div class="form-group">
+                    <label for="title">Title:</label>
+                    <input type="text" name="title" id="title" required>
+                </div>
+                <div class="form-group">
+                    <label for="description">Description:</label>
+                    <textarea name="description" id="description" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="category">Category:</label>
+                    <select name="category" id="category">
+                        {% for category in categories %}
+                            <option value="{{ category }}">{{ category }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="price">Price:</label>
+                    $<input type="number" step="0.01" name="price" id="price" required>
+                </div>
+                <button type="submit" class="btn">Post Item</button>
+            </form>
+        </div>
+    </section>
+{% endblock %}

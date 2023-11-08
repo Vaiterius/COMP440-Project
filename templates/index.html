@@ -18,7 +18,20 @@
 
 
         <h2>Listings</h2>
-        
+
+            <form action="/">
+                <label for="category">Select by category:</label>
+                <select name="category" id="category">
+                    <option disabled selected>Select a category</option>
+                    <option value="All">All</option>
+                    {% for category in categories %}
+                        <option value="{{ category }}">{{ category }}</option>
+                    {% endfor %}
+                </select>
+                <button>Search</button>
+            </form>
+            
+            <h3>Category: {{ category }}</h3>
             {% for listing in listings %}
                 <!-- Make each listing element clickable -->
                 <div class="listing">
