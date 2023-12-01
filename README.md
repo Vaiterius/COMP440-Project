@@ -10,6 +10,10 @@
 
 [Video Link](https://youtu.be/oVpZJD6aZtY)
 
+### Phase 3
+
+[Video Link](https://youtu.be/TuTDyo7lEzw)
+
 #### Contributions
 Everyone contributed adequately to the project on both front and back ends.
 
