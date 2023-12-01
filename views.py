@@ -5,6 +5,8 @@ from flask import Flask, request, render_template, redirect, flash, session, url
 from werkzeug.security import generate_password_hash, check_password_hash
 from mysql.connector import connection
 
+from phase_3_queries import *
+
 app = Flask(__name__)
 app.config["TESTING"] = True
 app.config["SECRET_KEY"] = "placeholder"
@@ -25,20 +27,20 @@ cursor = connection.cursor(dictionary=True)
 @app.route("/")
 def home():
     """Will list out all the user listings and also the listing form"""
-    # Check if user is logged in.
     if not "username" in session:
+        flash("You must be logged in to perform this", "error")
         return redirect("/login")
-    
+
     # Insert the pre-defined categories as a list of options.
     cursor.execute("SELECT category_name FROM categories")
     categories: list[str] = [row["category_name"] for row in cursor.fetchall()]
-    
+
     # Get user-selected category, if selected. Default is all.
     search_category: str = None
     query = None
     if request.args.get("category") in categories:
         search_category = request.args.get("category")
-    
+
         # Query for the listings with a specific category.
         query = """
             SELECT 
@@ -100,10 +102,10 @@ def registration():
     # Forget any cookies.
     # Cookies are for keeping the user logged in.
     session.clear()
-    
+
     # Form submission.
     if request.method == "POST":
-        
+
         # Get and cleanse registration data.
         first_name = request.form.get("firstName").strip()
         last_name = request.form.get("lastName").strip()
@@ -121,11 +123,12 @@ def registration():
             return redirect("/registrtation")
 
         # Ensure username and email aren't already taken.
-        cursor.execute("SELECT username FROM users WHERE username = %s", (username, ))
+        cursor.execute(
+            "SELECT username FROM users WHERE username = %s", (username, ))
         if cursor.fetchall():
             flash("Username already taken!", "error")
             return render_template("signup.html"), 400
-        
+
         cursor.execute(f"SELECT email FROM users WHERE email = %s", (email,))
         if cursor.fetchall():
             flash("Email already taken!", "error")
@@ -135,9 +138,9 @@ def registration():
         if password != confirm_password:
             flash("Passwords do not match!", "error")
             return render_template("signup.html"), 400
-        
+
         hashed_password = generate_password_hash(password)
-        
+
         # Create user.
         cursor.execute(
             "INSERT INTO users (username, first_name, last_name, email, password) VALUES (%s, %s, %s, %s, %s)",
@@ -147,13 +150,14 @@ def registration():
 
         # Log in user by adding them to the session.
         session["username"] = username
-        cursor.execute("SELECT user_id FROM users WHERE username = %s", (username,))
+        cursor.execute(
+            "SELECT user_id FROM users WHERE username = %s", (username,))
         session["user_id"] = cursor.fetchone()["user_id"]
 
         flash("Successfully signed up!", "success")
 
         return redirect("/")
-    
+
     return render_template("signup.html")
 
 
@@ -174,7 +178,7 @@ def login():
         if not email or not password:
             flash("All fields must be filled in!", "error")
             return render_template("login.html")
-        
+
         # Find if user exists and has matching password.
         cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
 
@@ -185,7 +189,7 @@ def login():
             flash("No matching account was found", "error")
 
             return redirect("/login")
-        
+
         if user and check_password_hash(user["password"], password):
             # Log them in.
             session["username"] = user["username"]
@@ -201,10 +205,10 @@ def login():
 @app.route("/submit_listing/", methods=["GET", "POST"])
 def submit_listing():
     """Submit an item as a listing"""
-    # Check if user is logged in.
     if not "username" in session:
+        flash("You must be logged in to perform this", "error")
         return redirect("/login")
-    
+
     if request.method == "POST":
         username: str = session["username"]
         user_id: int = session["user_id"]
@@ -229,7 +233,8 @@ def submit_listing():
         price = float(request.form.get("price"))
 
         # Get ID from selected category.
-        cursor.execute("SELECT category_id FROM categories WHERE category_name = %s", (category,))
+        cursor.execute(
+            "SELECT category_id FROM categories WHERE category_name = %s", (category,))
         category_id: int = cursor.fetchone()["category_id"]
 
         # Save item listing.
@@ -237,28 +242,27 @@ def submit_listing():
 
         # Commit changes.
         connection.commit()
-        
+
         flash("Item posted sucessfully.", "success")
 
         return redirect("/")
-    
+
     # Insert the pre-defined categories as a list of options.
     cursor.execute("SELECT category_name FROM categories")
     categories: list[str] = [row["category_name"] for row in cursor.fetchall()]
-    
+
     return render_template("post_listing.html", categories=categories)
 
 
 @app.route("/submit_review/item_id=<item_id>/", methods=["POST"])
 def submit_review(item_id: int):
     """Submit review for an item"""
-    # Check if user is logged in.
     if not "username" in session:
         flash("You must be logged in to perform this", "error")
         return redirect("/login")
-    
+
     user_id: int = session["user_id"]
-    
+
     # Get and cleanse form data.
     rating = request.form.get("rating").strip()
     review = request.form.get("review").strip()
@@ -276,7 +280,7 @@ def submit_review(item_id: int):
     if has_reached_max_posts(cursor.fetchall()):
         flash("You have reached the maximum posts for today", "error")
         return redirect("/")
-    
+
     # Create and save review into database.
     cursor.execute(
         "INSERT INTO reviews (author_id, item_id, rating, description) VALUES (%s, %s, %s, %s)",
@@ -285,15 +289,17 @@ def submit_review(item_id: int):
 
     # Commit the changes.
     connection.commit()
-    
+
     # Return to individual item listing, where they will see the reviews under it.
     return redirect(f"/listing/id={item_id}")
-
 
 
 @app.route("/listing/id=<listing_id>")
 def view_listing(listing_id: int):
     """View an individual listing"""
+    if not "username" in session:
+        flash("You must be logged in to perform this", "error")
+        return redirect("/login")
 
     # Query for the listings, getting the author and the category.
     query = """
@@ -322,7 +328,7 @@ def view_listing(listing_id: int):
     if not listing:
         flash("Item does not exist", "error")
         return redirect("/")
-    
+
     # Insert reviews to be seen under the item.
     query = """
         SELECT users.username, reviews.rating, reviews.description, reviews.created_at
@@ -344,19 +350,21 @@ def view_listing(listing_id: int):
 def insert_item(author_id: int, title: str, description: str, price: float, category_id: int) -> None:
     """General function that helps with inserting an item along with its belonging category"""
     # Insert item.
-    cursor.execute("INSERT IGNORE INTO items (author_id, title, description, price) VALUES (%s, %s, %s, %s)", (author_id, title, description, price))
+    cursor.execute("INSERT IGNORE INTO items (author_id, title, description, price) VALUES (%s, %s, %s, %s)",
+                   (author_id, title, description, price))
 
     # Fetch item's ID after being generated from insertion.
     cursor.execute("SELECT LAST_INSERT_ID()")
     item_id = cursor.fetchone()["LAST_INSERT_ID()"]
 
     # Create an item-category connection, binding an item to a category.
-    cursor.execute("INSERT IGNORE INTO item_categories (item_id, category_id) VALUES (%s, %s)", (item_id, category_id))
+    cursor.execute(
+        "INSERT IGNORE INTO item_categories (item_id, category_id) VALUES (%s, %s)", (item_id, category_id))
 
 
 def has_reached_max_posts(query: list[dict]) -> bool:
     """General function that helps with checking if user has posted 3 times the past day.
-    
+
     Either for items or reviews on an item.
     """
     num_posted_today: int = 0
@@ -365,14 +373,13 @@ def has_reached_max_posts(query: list[dict]) -> bool:
         # Check if earlier.
         if date < datetime.datetime.now():
             num_posted_today += 1
-    
+
     return num_posted_today >= 3
 
 
 @app.route("/initialize", methods=["POST"])
 def initialize():
     """Initialize the database tables if not already exists, as per the instructions"""
-    # Check if user is logged in.
     if not "username" in session:
         flash("You must be logged in to perform this", "error")
         return redirect("/login")
@@ -464,12 +471,14 @@ def initialize():
     # Get all available category IDs from the categories table
     cursor.execute("SELECT category_id FROM categories")
     categories = cursor.fetchall()
-    category_ids: list[int] = [category["category_id"] for category in categories]
+    category_ids: list[int] = [category["category_id"]
+                               for category in categories]
 
     for item in dummy_items:
         # Insert item with an assigned category.
         random_category_id = random.choice(category_ids)
-        insert_item(1, item["title"], item["description"], item["price"], random_category_id)
+        insert_item(1, item["title"], item["description"],
+                    item["price"], random_category_id)
 
     # Commit the changes
     connection.commit()
@@ -482,6 +491,168 @@ def initialize():
 @app.route("/lmao")
 def lma0():
     return render_template("lmao.html")
+
+
+### PHASE 3 QUERIES ###
+
+
+# Query-1 View
+@app.route("/query-1", methods=["GET", "POST"])
+def query_1():
+    """List the most expensive items in each category"""
+    if not "username" in session:
+        flash("You must be logged in to perform this", "error")
+        return redirect("/login")
+
+    if request.method == "POST":
+        pass
+
+    return render_template("phase_3_queries/query-1.html")
+
+
+# Query-2 View
+@app.route("/query-2", methods=["GET", "POST"])
+def query_2():
+    """
+    List the users who posted at least two items that were posted on the same day, one has a category
+    of X, and another has a category of Y
+    """
+    if not "username" in session:
+        flash("You must be logged in to perform this", "error")
+        return redirect("/login")
+
+    if request.method == "POST":
+        pass
+
+    return render_template("phase_3_queries/query-2.html")
+
+
+# Query-3 View
+@app.route("/query-3", methods=["GET", "POST"])
+def query_3():
+    """
+    List all the items posted by user X, such that all the comments are "Excellent" or "good" for
+    these items. User X is arbitrary and will be determined by the instructor.
+    """
+    if not "username" in session:
+        flash("You must be logged in to perform this", "error")
+        return redirect("/login")
+
+    if request.method == "POST":
+        pass
+
+    return render_template("phase_3_queries/query-3.html")
+
+
+# Query-4 View
+@app.route("/query-4", methods=["GET", "POST"])
+def query_4():
+    """
+    List the users who posted the most number of items on a specific date like 5/1/2023; if there is
+    a tie, list all the users who have a tie. The specific date can be hard coded into your SQL select
+    query or given by the user. 
+    """
+    if not "username" in session:
+        flash("You must be logged in to perform this", "error")
+        return redirect("/login")
+
+    if request.method == "POST":
+        pass
+
+    return render_template("phase_3_queries/query-4.html")
+
+
+# Query-5 View
+@app.route("/query-5", methods=["GET", "POST"])
+def query_5():
+    """
+    List the other users who are favorited by both users X, and Y. Usernames X and Y will be
+    selected from dropdown menus by the instructor.
+    """
+    if not "username" in session:
+        flash("You must be logged in to perform this", "error")
+        return redirect("/login")
+
+    if request.method == "POST":
+        pass
+
+    return render_template("phase_3_queries/query-5.html")
+
+
+# Query-6 View
+@app.route("/query-6", methods=["GET", "POST"])
+def query_6():
+    """
+    Display all the users who never posted any "excellent" items: an item is excellent if at least
+    three reviews are excellent. 
+    """
+    if not "username" in session:
+        flash("You must be logged in to perform this", "error")
+        return redirect("/login")
+
+    if request.method == "POST":
+        pass
+
+    return render_template("phase_3_queries/query-6.html")
+
+
+# Query-7 View
+@app.route("/query-7", methods=["GET", "POST"])
+def query_7():
+    """Display all the users who never posted a "poor" review"""
+    if not "username" in session:
+        flash("You must be logged in to perform this", "error")
+        return redirect("/login")
+
+    if request.method == "POST":
+        pass
+
+    return render_template("phase_3_queries/query-7.html")
+
+
+# Query-8 View
+@app.route("/query-8", methods=["GET", "POST"])
+def query_8():
+    """Display all the users who posted some reviews, but each of them is "poor"""
+    if not "username" in session:
+        flash("You must be logged in to perform this", "error")
+        return redirect("/login")
+
+    if request.method == "POST":
+        pass
+
+    return render_template("phase_3_queries/query-8.html")
+
+
+# Query-9 View
+@app.route("/query-9", methods=["GET", "POST"])
+def query_9():
+    """Display those users such that each item they posted so far never received any "poor" reviews"""
+    if not "username" in session:
+        flash("You must be logged in to perform this", "error")
+        return redirect("/login")
+
+    if request.method == "POST":
+        pass
+
+    return render_template("phase_3_queries/query-9.html")
+
+
+# Query-10 View
+@app.route("/query-10", methods=["GET", "POST"])
+def query_10():
+    """
+    List a user pair (A, B) such that they always gave each other "excellent" reviews for every single
+    item they posted. 
+    """
+    if not "username" in session:
+        flash("You must be logged in to perform this", "error")
+        return redirect("/login")
+
+    if request.method == "POST":
+        pass
+
+    return render_template("phase_3_queries/query-10.html")
 
 
 if __name__ == "__main__":
