@@ -12,6 +12,16 @@
     </p>
 </header>
 <section>
-    <!-- Code here -->
+    <p>
+        <b>All currently registered users:</b>
+        {% for user in all_users %}
+        <span>{{ user.username }}</span>,
+        {% endfor %}
+    </p>
+    <ul>
+        {% for user in users %}
+        <li>{{ user.username }} has never received a "poor" review on any of their items</li>
+        {% endfor %}
+    </ul>
 </section>
 {% endblock %}

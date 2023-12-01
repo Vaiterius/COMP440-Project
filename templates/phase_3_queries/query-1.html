@@ -8,6 +8,20 @@
     <h2>List the most expensive items in each category</h2>
 </header>
 <section>
-    <!-- Code here -->
+    <p>
+        <b>All currently registered users:</b>
+        {% for user in all_users %}
+        <span>{{ user.username }}</span>,
+        {% endfor %}
+    </p>
+    <ul>
+        {% for item in items %}
+        {% if item.title == None %}
+        <li><b>{{ item.category_name }}</b>: No items</li>
+        {% else %}
+        <li><b>{{ item.category_name }}</b>: {{ item.title }}, priced ${{ item.price }}</li>
+        {% endif %}
+        {% endfor %}
+    </ul>
 </section>
 {% endblock %}

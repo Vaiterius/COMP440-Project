@@ -504,10 +504,13 @@ def query_1():
         flash("You must be logged in to perform this", "error")
         return redirect("/login")
 
-    if request.method == "POST":
-        pass
+    cursor.execute(QUERY_1)
+    items = cursor.fetchall()
 
-    return render_template("phase_3_queries/query-1.html")
+    cursor.execute("SELECT * FROM users;")
+    all_users = cursor.fetchall()
+
+    return render_template("phase_3_queries/query-1.html", items=items, all_users=all_users)
 
 
 # Query-2 View
@@ -521,10 +524,17 @@ def query_2():
         flash("You must be logged in to perform this", "error")
         return redirect("/login")
 
+    cursor.execute(QUERY_2)
+    users = cursor.fetchall()
+
     if request.method == "POST":
+        # TODO
         pass
 
-    return render_template("phase_3_queries/query-2.html")
+    cursor.execute("SELECT * FROM users;")
+    all_users = cursor.fetchall()
+
+    return render_template("phase_3_queries/query-2.html", users=users, all_users=all_users)
 
 
 # Query-3 View
@@ -538,10 +548,26 @@ def query_3():
         flash("You must be logged in to perform this", "error")
         return redirect("/login")
 
-    if request.method == "POST":
-        pass
+    cursor.execute("SELECT * FROM users;")
+    all_users = cursor.fetchall()
 
-    return render_template("phase_3_queries/query-3.html")
+    items = None
+
+    cursor.execute("SELECT * FROM users;")
+    users = cursor.fetchall()
+
+    username = None
+
+    if request.method == "POST":
+        username = request.form.get("user")
+        print(username)
+
+        cursor.execute(QUERY_3, (username,))
+        items = cursor.fetchall()
+
+        return render_template("phase_3_queries/query-3.html", username=username, users=users, items=items, all_users=all_users)
+
+    return render_template("phase_3_queries/query-3.html", username=username, users=users, items=items, all_users=all_users)
 
 
 # Query-4 View
@@ -559,7 +585,10 @@ def query_4():
     if request.method == "POST":
         pass
 
-    return render_template("phase_3_queries/query-4.html")
+    cursor.execute("SELECT * FROM users;")
+    all_users = cursor.fetchall()
+
+    return render_template("phase_3_queries/query-4.html", all_users=all_users)
 
 
 # Query-5 View
@@ -576,7 +605,10 @@ def query_5():
     if request.method == "POST":
         pass
 
-    return render_template("phase_3_queries/query-5.html")
+    cursor.execute("SELECT * FROM users;")
+    all_users = cursor.fetchall()
+
+    return render_template("phase_3_queries/query-5.html", all_users=all_users)
 
 
 # Query-6 View
@@ -590,10 +622,13 @@ def query_6():
         flash("You must be logged in to perform this", "error")
         return redirect("/login")
 
-    if request.method == "POST":
-        pass
+    cursor.execute(QUERY_6)
+    users = cursor.fetchall()
 
-    return render_template("phase_3_queries/query-6.html")
+    cursor.execute("SELECT * FROM users;")
+    all_users = cursor.fetchall()
+
+    return render_template("phase_3_queries/query-6.html", users=users, all_users=all_users)
 
 
 # Query-7 View
@@ -604,10 +639,13 @@ def query_7():
         flash("You must be logged in to perform this", "error")
         return redirect("/login")
 
-    if request.method == "POST":
-        pass
+    cursor.execute(QUERY_7)
+    users = cursor.fetchall()
 
-    return render_template("phase_3_queries/query-7.html")
+    cursor.execute("SELECT * FROM users;")
+    all_users = cursor.fetchall()
+
+    return render_template("phase_3_queries/query-7.html", users=users, all_users=all_users)
 
 
 # Query-8 View
@@ -618,10 +656,13 @@ def query_8():
         flash("You must be logged in to perform this", "error")
         return redirect("/login")
 
-    if request.method == "POST":
-        pass
+    cursor.execute(QUERY_8)
+    users = cursor.fetchall()
 
-    return render_template("phase_3_queries/query-8.html")
+    cursor.execute("SELECT * FROM users;")
+    all_users = cursor.fetchall()
+
+    return render_template("phase_3_queries/query-8.html", users=users, all_users=all_users)
 
 
 # Query-9 View
@@ -632,10 +673,13 @@ def query_9():
         flash("You must be logged in to perform this", "error")
         return redirect("/login")
 
-    if request.method == "POST":
-        pass
+    cursor.execute(QUERY_9)
+    users = cursor.fetchall()
 
-    return render_template("phase_3_queries/query-9.html")
+    cursor.execute("SELECT * FROM users;")
+    all_users = cursor.fetchall()
+
+    return render_template("phase_3_queries/query-9.html", users=users, all_users=all_users)
 
 
 # Query-10 View
@@ -649,10 +693,13 @@ def query_10():
         flash("You must be logged in to perform this", "error")
         return redirect("/login")
 
-    if request.method == "POST":
-        pass
+    cursor.execute(QUERY_10)
+    user_pairs = cursor.fetchall()
 
-    return render_template("phase_3_queries/query-10.html")
+    cursor.execute("SELECT * FROM users;")
+    all_users = cursor.fetchall()
+
+    return render_template("phase_3_queries/query-10.html", user_pairs=user_pairs, all_users=all_users)
 
 
 if __name__ == "__main__":

@@ -15,6 +15,16 @@
     </p>
 </header>
 <section>
-    <!-- Code here -->
+    <p>
+        <b>All currently registered users:</b>
+        {% for user in all_users %}
+        <span>{{ user.username }}</span>,
+        {% endfor %}
+    </p>
+    <ul>
+        {% for user in users %}
+        <li>{{ user.username }} has never had an item that was considered "excellent"</li>
+        {% endfor %}
+    </ul>
 </section>
 {% endblock %}

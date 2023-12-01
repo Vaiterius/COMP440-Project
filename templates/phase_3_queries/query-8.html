@@ -8,6 +8,16 @@
     <h2>Display all the users who posted some reviews, but each of them is "poor".</h2>
 </header>
 <section>
-    <!-- Code here -->
+    <p>
+        <b>All currently registered users:</b>
+        {% for user in all_users %}
+        <span>{{ user.username }}</span>,
+        {% endfor %}
+    </p>
+    <ul>
+        {% for user in users %}
+        <li>{{ user.username }} has posted only "poor" reviews</li>
+        {% endfor %}
+    </ul>
 </section>
 {% endblock %}

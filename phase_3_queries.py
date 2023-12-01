@@ -1,29 +1,25 @@
 # List the most expensive items in each category.
 QUERY_1 = (
     """
-    WITH RankedItems AS (
-        SELECT
-            i.item_id,
-            i.title,
-            i.description,
-            i.price,
-            c.category_name,
-            ROW_NUMBER() OVER (PARTITION BY c.category_id ORDER BY i.price DESC) AS ranking
-        FROM
-            items i
-            JOIN item_categories ic ON i.item_id = ic.item_id
-            JOIN categories c ON ic.category_id = c.category_id
-    )
     SELECT
-        category_name,
-        item_id,
-        title,
-        description,
-        price
+        c.category_name,
+        MAX(i.item_id) AS item_id,
+        MAX(i.title) AS title,
+        MAX(i.description) AS description,
+        MAX(i.price) AS price
     FROM
-        RankedItems
+        categories c
+    LEFT JOIN item_categories ic ON c.category_id = ic.category_id
+    LEFT JOIN items i ON ic.item_id = i.item_id
     WHERE
-        ranking = 1;
+        i.price = (
+            SELECT MAX(price)
+            FROM items
+            WHERE item_id = i.item_id
+        )
+        OR i.price IS NULL
+    GROUP BY
+        c.category_name;
     """
 )
 
@@ -56,14 +52,10 @@ QUERY_3 = (
     SELECT i.*
     FROM items i
     JOIN reviews r ON i.item_id = r.item_id
-    WHERE r.rating IN ('excellent', 'good')
-    AND r.author_id = (SELECT user_id FROM users WHERE username = 'X')
-    AND NOT EXISTS (
-        SELECT 1
-        FROM reviews
-        WHERE item_id = i.item_id
-        AND rating NOT IN ('excellent', 'good')
-    );
+    JOIN users u ON i.author_id = u.user_id
+    WHERE u.username = %s
+    GROUP BY i.item_id, i.title, i.description, i.price
+    HAVING SUM(r.rating NOT IN ('excellent', 'good')) = 0;
     """
 )
 
@@ -129,7 +121,7 @@ QUERY_7 = (
 # Display all the users who posted some reviews, but each of them is "poor".
 QUERY_8 = (
     """
-    SELECT
+    SELECT DISTINCT
         u.user_id,
         u.username
     FROM
@@ -145,17 +137,17 @@ QUERY_9 = (
     """
     SELECT DISTINCT u.*
     FROM users u
-    JOIN items i ON u.user_id = i.author_id
+    JOIN reviews r ON u.user_id = r.author_id
     WHERE NOT EXISTS (
         SELECT 1
-        FROM reviews r
-        WHERE r.item_id = i.item_id
-        AND r.rating = 'poor'
+        FROM reviews
+        WHERE author_id = u.user_id
+        AND rating != 'poor'
     )
-    OR NOT EXISTS (
+    AND EXISTS (
         SELECT 1
-        FROM reviews r
-        WHERE r.item_id = i.item_id
+        FROM reviews
+        WHERE author_id = u.user_id
     );
     """
 )
@@ -163,36 +155,14 @@ QUERY_9 = (
 # List a user pair (A, B) such that they always gave each other "excellent" reviews for every single item they posted.
 QUERY_10 = (
     """
-    SELECT
-        u1.user_id AS userA_id,
-        u1.username AS userA_username,
-        u2.user_id AS userB_id,
-        u2.username AS userB_username
-    FROM
-        users u1
-        JOIN users u2 ON u1.user_id < u2.user_id -- Ensuring unique pairs
-        JOIN items i1 ON u1.user_id = i1.author_id
-        JOIN items i2 ON u2.user_id = i2.author_id
-    WHERE
-        NOT EXISTS (
-            SELECT 1
-            FROM
-                reviews r1
-                JOIN reviews r2 ON r1.item_id = i1.item_id AND r2.item_id = i2.item_id
-            WHERE
-                r1.author_id = u1.user_id
-                AND r2.author_id = u2.user_id
-                AND (r1.rating != 'excellent' OR r2.rating != 'excellent')
-        )
-        AND EXISTS (
-            SELECT 1
-            FROM
-                reviews r1
-                JOIN reviews r2 ON r1.item_id = i1.item_id AND r2.item_id = i2.item_id
-            WHERE
-                r1.author_id = u1.user_id
-                AND r2.author_id = u2.user_id
-                AND (r1.rating = 'excellent' AND r2.rating = 'excellent')
-        );
+    SELECT DISTINCT ua.user_id AS user_a_id, ua.username AS user_a_username,
+        ub.user_id AS user_b_id, ub.username AS user_b_username
+    FROM users ua
+    JOIN items ia ON ua.user_id = ia.author_id
+    JOIN reviews ra ON ia.item_id = ra.item_id AND ra.rating = 'excellent'
+    JOIN users ub ON ra.author_id = ub.user_id
+    JOIN items ib ON ub.user_id = ib.author_id
+    JOIN reviews rb ON ib.item_id = rb.item_id AND rb.rating = 'excellent'
+    WHERE ua.user_id < ub.user_id;
     """
 )

@@ -14,6 +14,32 @@
     </p>
 </header>
 <section>
-    <!-- Code here -->
+    <p>
+        <b>All currently registered users:</b>
+        {% for user in all_users %}
+        <span>{{ user.username }}</span>,
+        {% endfor %}
+    </p>
+    <form action="/query-3" method="post">
+        <label for="user">Select a user:</label>
+        <select name="user" id="user">
+            <option disabled selected>Select a user</option>
+            {% for user in users %}
+            <option value="{{ user.username }}">{{ user.username }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Search</button>
+    </form>
+
+    {% if username %}
+    <div>
+        <h3>Best of <b>{{ username }}'s</b> items</h3>
+        <ul>
+            {% for item in items %}
+            <li>{{ item.title }} had all "excellent" or "good" reviews</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
 </section>
 {% endblock %}

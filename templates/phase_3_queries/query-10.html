@@ -10,6 +10,17 @@
     </h2>
 </header>
 <section>
-    <!-- Code here -->
+    <p>
+        <b>All currently registered users:</b>
+        {% for user in all_users %}
+        <span>{{ user.username }}</span>,
+        {% endfor %}
+    </p>
+    <ul>
+        {% for user_pair in user_pairs %}
+        <li>User pair: <b>{{ user_pair.user_a_username }}</b> and <b>{{ user_pair.user_b_username }}</b> always gave
+            each other
+            "excellent" reviews</li>
+        {% endfor %}
 </section>
 {% endblock %}
