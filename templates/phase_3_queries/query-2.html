@@ -21,10 +21,38 @@
         <span>{{ user.username }}</span>,
         {% endfor %}
     </p>
-    <ul>
-        {% for user in users %}
-        <li>{{ user.username }} has never had an item that was considered "excellent"</li>
-        {% endfor %}
-    </ul>
+    <form action="/query-2" method="post">
+        <!-- Category X -->
+        <label for="category-1">Select category 1:</label>
+        <select name="category-1" id="category-1">
+            <option disabled selected>Select a category</option>
+            {% for category in categories %}
+            <option value="{{ category.category_name }}">{{ category.category_name }}</option>
+            {% endfor %}
+        </select>
+
+        <!-- Category Y -->
+        <label for="category-2">Select category 2:</label>
+        <select name="category-2" id="category-2">
+            <option disabled selected>Select a category</option>
+            {% for category in categories %}
+            <option value="{{ category.category_name }}">{{ category.category_name }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Search</button>
+    </form>
+
+    {% if selected_users %}
+    <div>
+        <h3>Users that have posted two items falling on two selected categories:</h3>
+        <ul>
+            {% for user in selected_users %}
+            <li>{{ user.username }} had two items from categories {{category_1}} and {{ category_2 }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% else %}
+    None selected or none was returned
+    {% endif %}
 </section>
 {% endblock %}

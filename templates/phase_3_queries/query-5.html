@@ -11,6 +11,44 @@
         favorite for both X and Y.</p>
 </header>
 <section>
-    <!-- Code here -->
+    <p>
+        <b>All currently registered users:</b>
+        {% for user in all_users %}
+        <span>{{ user.username }}</span>,
+        {% endfor %}
+    </p>
+    <form action="/query-5" method="post">
+        <!-- User X -->
+        <label for="user-1">Select liker 1:</label>
+        <select name="user-1" id="user-1">
+            <option disabled selected>Select a user</option>
+            {% for user in user_likers %}
+            <option value="{{ user.username }}">{{ user.username }}</option>
+            {% endfor %}
+        </select>
+
+        <!-- User Y -->
+        <label for="user-2">Select liker 2:</label>
+        <select name="user-2" id="user-2">
+            <option disabled selected>Select a user</option>
+            {% for user in user_likers %}
+            <option value="{{ user.username }}">{{ user.username }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Find users these two favorite!</button>
+    </form>
+
+    {% if favorites %}
+    <div>
+        <h3>{{user_1}} and {{ user_2 }} favorite...</h3>
+        <ul>
+            {% for favorite in favorites %}
+            <li>{{favorite.username}}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% else %}
+    There were no favorites or a search wasn't sent yet
+    {% endif %}
 </section>
 {% endblock %}

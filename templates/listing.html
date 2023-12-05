@@ -3,42 +3,50 @@
 {% block title %}Listing #{{ listing.item_id }}{% endblock %}
 
 {% block main %}
-    <link rel="stylesheet" href="static/styles/listing_styles.css" />
+<link rel="stylesheet" href="static/styles/listing_styles.css" />
 
-    <section class="container">
-        <h1>{{ listing.title }}</h1>
-        <p>Posted by {{ listing.author }}</p>
-        <p>Description: {{ listing.description }}</p>
-        <p>Price: {{ listing.price }}</p>
-        <p>Category: {{ listing.category }}</p>
-        <p>Uploaded: {{ listing.created_at }}</p>
-    </section>
+<section class="container">
+    <h1>{{ listing.title }}</h1>
+    <p>Posted by {{ listing.author }}</p>
+    <p>Description: {{ listing.description }}</p>
+    <p>Price: {{ listing.price }}</p>
+    <p>Category: {{ listing.category }}</p>
+    <p>Uploaded: {{ listing.created_at }}</p>
+</section>
 
-    <!-- User can leave review here -->
-    <section>
-        <h2>Reviews</h2>
-
-        {% for review in reviews %}
-            <div class="review">
-                <h4>{{ review.username }} says...</h4>
-                <p>Rating: {{ review.rating }}</p>
-                <p>Description: {{ review.description }}</p>
-                <p>Created at: {{ review.created_at }}</p>
-            </div>
-            <hr>
-        {% endfor %}
-
-        <h3>Satisfied with your purchase? Leave a review!</h3>
-        <form action="/submit_review/item_id={{ listing.item_id }}" method="post">
-            <label for="rating">Rating:</label>
-            <select name="rating" id="rating">
-                {% for rating in ratings %}
-                    <option value="{{ rating }}">{{ rating }}</option>
-                {% endfor %}
-            </select>
-            <label for="review">Your review:</label>
-            <textarea name="review" id="review" required></textarea>
-            <button type="submit">Submit review</button>
+<!-- <section>
+    <div class="button">
+        <form action="/favorite_author/{{ listing.author }}" method="post">
+            <button type="submit">Click me to favorite this author</button>
         </form>
-    </section>
+    </div>
+</section> -->
+
+<!-- User can leave review here -->
+<section>
+    <h2>Reviews</h2>
+
+    {% for review in reviews %}
+    <div class="review">
+        <h4>{{ review.username }} says...</h4>
+        <p>Rating: {{ review.rating }}</p>
+        <p>Description: {{ review.description }}</p>
+        <p>Created at: {{ review.created_at }}</p>
+    </div>
+    <hr>
+    {% endfor %}
+
+    <h3>Satisfied with your purchase? Leave a review!</h3>
+    <form action="/submit_review/item_id={{ listing.item_id }}" method="post">
+        <label for="rating">Rating:</label>
+        <select name="rating" id="rating">
+            {% for rating in ratings %}
+            <option value="{{ rating }}">{{ rating }}</option>
+            {% endfor %}
+        </select>
+        <label for="review">Your review:</label>
+        <textarea name="review" id="review" required></textarea>
+        <button type="submit">Submit review</button>
+    </form>
+</section>
 {% endblock %}

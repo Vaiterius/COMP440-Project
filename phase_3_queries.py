@@ -26,23 +26,16 @@ QUERY_1 = (
 # List the users who posted at least two items that were posted on the same day, one has a category of X, and another has a category of Y. In terms of the user interface, you will implement two text fields so that you can input one category into each text field, and the search will return the user (or users) who (the same user) posted two different items on the same day, such that one item has a category in the first text field and the other has a category in the second text field.
 QUERY_2 = (
     """
-    SELECT
-        u.*,
-        COUNT(DISTINCT CONCAT(i1.item_id, i2.item_id)) AS item_count
-    FROM
-        users u
-        JOIN items i1 ON u.user_id = i1.author_id
-        JOIN items i2 ON u.user_id = i2.author_id
-        JOIN item_categories ic1 ON i1.item_id = ic1.item_id
-        JOIN item_categories ic2 ON i2.item_id = ic2.item_id
-    WHERE
-        i1.created_at = i2.created_at
-        AND ic1.category_id = 'X' 
-        AND ic2.category_id = 'Y'
-    GROUP BY
-        u.user_id, u.username
-    HAVING
-        item_count >= 2;
+    SELECT u.*
+    FROM users u
+    JOIN items i1 ON u.user_id = i1.author_id
+    JOIN items i2 ON u.user_id = i2.author_id
+    JOIN item_categories ic1 ON i1.item_id = ic1.item_id
+    JOIN item_categories ic2 ON i2.item_id = ic2.item_id
+    JOIN categories c1 ON ic1.category_id = c1.category_id AND c1.category_name = %s
+    JOIN categories c2 ON ic2.category_id = c2.category_id AND c2.category_name = %s
+    WHERE DATE(i1.created_at) = DATE(i2.created_at)
+    AND i1.item_id <> i2.item_id;
     """
 )
 
@@ -62,20 +55,29 @@ QUERY_3 = (
 # List the users who posted the most number of items on a specific date like 5/1/2023; if there is a tie, list all the users who have a tie. The specific date can be hard coded into your SQL select query or given by the user.
 QUERY_4 = (
     """
-    SET @specific_date = '2023-05-01';
-
-    SELECT u.*, COUNT(i.item_id) as num_items_posted
-    FROM users u
-    JOIN items i ON u.user_id = i.author_id
-    WHERE DATE(i.created_at) = @specific_date
-    GROUP BY u.user_id, u.username
-    HAVING COUNT(i.item_id) = (
-        SELECT COUNT(item_id) as max_num_items
-        FROM items
-        WHERE DATE(created_at) = @specific_date
-        GROUP BY author_id
-        ORDER BY max_num_items DESC
-        LIMIT 1
+    WITH UserPostCount AS (
+    SELECT
+        u.user_id,
+        u.username,
+        COUNT(i.item_id) AS post_count
+    FROM
+        users u
+    LEFT JOIN
+        items i ON u.user_id = i.author_id
+            AND DATE(i.created_at) = %s
+    GROUP BY
+        u.user_id, u.username
+    )
+    SELECT
+    user_id,
+    username,
+    post_count
+    FROM
+    UserPostCount
+    WHERE
+    post_count = (
+        SELECT MAX(post_count)
+        FROM UserPostCount
     );
     """
 )

@@ -399,6 +399,20 @@ def initialize():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
+        -- A user's favorite seller.
+        CREATE TABLE IF NOT EXISTS favorite_users (
+            user_id INT AUTO_INCREMENT PRIMARY KEY,
+            favorite_user_id INT NOT NULL,
+            FOREIGN KEY (favorite_user_id) REFERENCES users(user_id)
+        );
+
+        -- A user's favorite item.
+        CREATE TABLE IF NOT EXISTS favorite_items (
+            user_id INT AUTO_INCREMENT PRIMARY KEY,
+            favorite_item_id INT NOT NULL,
+            FOREIGN KEY (favorite_item_id) REFERENCES items(item_id)
+        );
+
         CREATE TABLE IF NOT EXISTS items (
             item_id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT,
@@ -524,17 +538,26 @@ def query_2():
         flash("You must be logged in to perform this", "error")
         return redirect("/login")
 
-    cursor.execute(QUERY_2)
-    users = cursor.fetchall()
+    cursor.execute("SELECT * FROM categories;")
+    categories = cursor.fetchall()
 
-    if request.method == "POST":
-        # TODO
-        pass
+    category_1 = None
+    category_2 = None
+    selected_users = None
 
     cursor.execute("SELECT * FROM users;")
     all_users = cursor.fetchall()
 
-    return render_template("phase_3_queries/query-2.html", users=users, all_users=all_users)
+    if request.method == "POST":
+        category_1 = request.form.get("category-1")
+        category_2 = request.form.get("category-2")
+
+        cursor.execute(QUERY_2, (category_1, category_2))
+        selected_users = cursor.fetchall()
+
+        return render_template("phase_3_queries/query-2.html", category_1=category_1, category_2=category_2, categories=categories, selected_users=selected_users, all_users=all_users)
+
+    return render_template("phase_3_queries/query-2.html", category_1=category_1, category_2=category_2, categories=categories, selected_users=selected_users, all_users=all_users)
 
 
 # Query-3 View
@@ -582,13 +605,15 @@ def query_4():
         flash("You must be logged in to perform this", "error")
         return redirect("/login")
 
-    if request.method == "POST":
-        pass
+    HARDCODED_DATE = "2023-12-04"
 
     cursor.execute("SELECT * FROM users;")
     all_users = cursor.fetchall()
 
-    return render_template("phase_3_queries/query-4.html", all_users=all_users)
+    cursor.execute(QUERY_4, (HARDCODED_DATE,))
+    selected_users = cursor.fetchall()
+
+    return render_template("phase_3_queries/query-4.html", hardcoded_date=HARDCODED_DATE, all_users=all_users, selected_users=selected_users)
 
 
 # Query-5 View
@@ -602,11 +627,14 @@ def query_5():
         flash("You must be logged in to perform this", "error")
         return redirect("/login")
 
-    if request.method == "POST":
-        pass
-
     cursor.execute("SELECT * FROM users;")
     all_users = cursor.fetchall()
+
+    user_likers = None
+    favorites = None
+
+    if request.method == "POST":
+        pass
 
     return render_template("phase_3_queries/query-5.html", all_users=all_users)
 
