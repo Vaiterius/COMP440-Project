@@ -3,48 +3,55 @@
 {% block title %}Home | Item listings{% endblock %}
 
 {% block main %}
-    <link rel="stylesheet" href="static/styles/index_styles.css" />
+<link rel="stylesheet" href="static/styles/index_styles.css" />
 
-    <section class="container">
-        <h1>Hello, {{ username }}!</h1>
+<section class="container">
+    <h1>Hello, {{ username }}!</h1>
 
-        <div class="button">
-            <form action="/initialize" method="post">
-                <button type="submit">Initialize database</button>
-            </form>
-        </div>
+    <p>
+        <b>All currently registered users:</b>
+        {% for user in all_users %}
+        <span>{{ user.username }}</span>,
+        {% endfor %}
+    </p>
 
-        <p>Click <a href="/submit_listing">here</a> to post an item!</p>
+    <div class="button">
+        <form action="/initialize" method="post">
+            <button type="submit">Initialize database</button>
+        </form>
+    </div>
+
+    <p>Click <a href="/submit_listing">here</a> to post an item!</p>
 
 
-        <h2>Listings</h2>
+    <h2>Listings</h2>
 
-            <form action="/">
-                <label for="category">Select by category:</label>
-                <select name="category" id="category">
-                    <option disabled selected>Select a category</option>
-                    <option value="All">All</option>
-                    {% for category in categories %}
-                        <option value="{{ category }}">{{ category }}</option>
-                    {% endfor %}
-                </select>
-                <button>Search</button>
-            </form>
-            
-            <h3>Category: {{ category }}</h3>
-            {% for listing in listings %}
-                <!-- Make each listing element clickable -->
-                <div class="listing">
-                    <a href="/listing/id={{ listing.item_id }}">
-                        <h3>{{ listing.title }}</h3>
-                        <p>Posted by {{ listing.author }}</p>
-                        <p>Description: {{ listing.description }}</p>
-                        <p>Price: {{ listing.price }}</p>
-                        <p>Category: {{ listing.category }}</p>
-                        <p>Uploaded: {{ listing.created_at }}</p>
-                    </a>
-                </div>
+    <form action="/">
+        <label for="category">Select by category:</label>
+        <select name="category" id="category">
+            <option disabled selected>Select a category</option>
+            <option value="All">All</option>
+            {% for category in categories %}
+            <option value="{{ category }}">{{ category }}</option>
             {% endfor %}
-        
-    </section>
+        </select>
+        <button>Search</button>
+    </form>
+
+    <h3>Category: {{ category }}</h3>
+    {% for listing in listings %}
+    <!-- Make each listing element clickable -->
+    <div class="listing">
+        <a href="/listing/id={{ listing.item_id }}">
+            <h3>{{ listing.title }}</h3>
+            <p>Posted by {{ listing.author }}</p>
+            <p>Description: {{ listing.description }}</p>
+            <p>Price: {{ listing.price }}</p>
+            <p>Category: {{ listing.category }}</p>
+            <p>Uploaded: {{ listing.created_at }}</p>
+        </a>
+    </div>
+    {% endfor %}
+
+</section>
 {% endblock %}

@@ -17,6 +17,16 @@
         <span>{{ user.username }}</span>,
         {% endfor %}
     </p>
+
+    <div>
+        <h3>Likers</h3>
+        <ul>
+            {% for pair in liker_pairs %}
+            <li>{{ pair.user1 }} likes {{ pair.user2 }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
     <form action="/query-5" method="post">
         <!-- User X -->
         <label for="user-1">Select liker 1:</label>
@@ -35,12 +45,12 @@
             <option value="{{ user.username }}">{{ user.username }}</option>
             {% endfor %}
         </select>
-        <button type="submit">Find users these two favorite!</button>
+        <button type="submit">Find these users' favorite!</button>
     </form>
 
     {% if favorites %}
     <div>
-        <h3>{{user_1}} and {{ user_2 }} favorite...</h3>
+        <h3>{{user_1}}'s and {{ user_2 }}'s favorite(s)...</h3>
         <ul>
             {% for favorite in favorites %}
             <li>{{favorite.username}}</li>

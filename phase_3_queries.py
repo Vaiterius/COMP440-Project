@@ -83,9 +83,42 @@ QUERY_4 = (
 )
 
 # List the other users who are favorited by both users X, and Y. Usernames X and Y will be selected from dropdown menus by the instructor. In other words, the user (or users) C are the favorite for both X and Y.
+# QUERY_5 = (
+#     """
+#     SELECT DISTINCT u.*
+#     FROM favorite_users f
+#     JOIN users u ON f.favorite_user_id = u.user_id
+#     JOIN users uX ON f.user_id = uX.user_id
+#     JOIN users uY ON f.user_id = uY.user_id
+#     WHERE uX.username = %s OR uY.username = %s;
+#     """
+# )
+
 QUERY_5 = (
     """
+    SELECT u.*
+    FROM favorite_users f
+    JOIN users u ON f.favorite_user_id = u.user_id
+    JOIN users uX ON f.user_id = uX.user_id
+    WHERE uX.username = %s
 
+    UNION
+
+    -- Query for users liked by user Y
+    SELECT u.*
+    FROM favorite_users f
+    JOIN users u ON f.favorite_user_id = u.user_id
+    JOIN users uY ON f.user_id = uY.user_id
+    WHERE uY.username = %s;
+    """
+)
+
+QUERY_5_LIKERS = (
+    """
+    SELECT u1.username AS user1, u2.username AS user2
+    FROM favorite_users f
+    JOIN users u1 ON f.user_id = u1.user_id
+    JOIN users u2 ON f.favorite_user_id = u2.user_id;
     """
 )
 

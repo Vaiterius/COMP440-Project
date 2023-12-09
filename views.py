@@ -88,7 +88,11 @@ def home():
 
     listings = cursor.fetchall()
 
+    cursor.execute("SELECT * FROM users;")
+    all_users = cursor.fetchall()
+
     return render_template("index.html",
+                           all_users=all_users,
                            username=session["username"],
                            search_category=search_category,
                            categories=categories,
@@ -630,13 +634,22 @@ def query_5():
     cursor.execute("SELECT * FROM users;")
     all_users = cursor.fetchall()
 
-    user_likers = None
+    user_likers = all_users
     favorites = None
 
-    if request.method == "POST":
-        pass
+    cursor.execute(QUERY_5_LIKERS)
+    liker_pairs = cursor.fetchall()
 
-    return render_template("phase_3_queries/query-5.html", all_users=all_users)
+    if request.method == "POST":
+        user_1 = request.form.get("user-1")
+        user_2 = request.form.get("user-2")
+
+        cursor.execute(QUERY_5, (user_1, user_2))
+        favorites = cursor.fetchall()
+
+        return render_template("phase_3_queries/query-5.html", user_1=user_1, user_2=user_2, favorites=favorites, liker_pairs=liker_pairs, user_likers=user_likers, all_users=all_users)
+
+    return render_template("phase_3_queries/query-5.html", liker_pairs=liker_pairs, user_likers=user_likers, all_users=all_users)
 
 
 # Query-6 View
